@@ -1,0 +1,53 @@
+#!/bin/bash
+
+SSH_CONN=''
+SERVER_PATH=''
+
+function show_help {
+readonly SCRIPT_NAME=$(basename "$0")
+cat <<EOF
+readonly SCRIPT_NAME=$(basename "$0")
+cat <<EOF
+Usage: $SCRIPT_NAME [-h] -s ssh-server -p server-path
+ssh-login ssh server login string, ie: example@example.com
+server-base-path Path to the framework from login directory sites/html/
+EOF
+}
+
+declare SVN_URL=''
+declare SERVER_PATH=''
+
+while [ "$#" -gt 0 ]
+do
+	case "$1" in
+	-h|--help)
+		show_help
+		exit 0
+		;;
+	-s|--svn-url)
+		SVN_URL=$2
+		shift
+		;;
+	-p|--server-path)
+		SERVER_PATH=$2
+		shift
+		;;
+	*)
+		>&2 echo "Invalid option '$1'. Use --help to see the available options"
+		exit 1
+		;;
+	esac
+	shift
+done
+
+if [ -z "$SVN_URL" ]; then
+	>&2 echo "The -s option is mandatory, use --help to see the available options"
+	exit 1
+fi
+
+if [ -z "$SERVER_PATH" ]; then
+	>&2 echo "The -p option is mandatory, use --help to see the available options"
+	exit 1
+fi
+
+ssh "$SSH_CONN" -t "cd \"$SERVER_PATH\"; `echo $SHELL --login`"

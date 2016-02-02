@@ -1,0 +1,68 @@
+#!/bin/bash
+
+set -e
+set -u
+set -o pipefail
+
+declare NONEWLINE=""
+declare RELATIVE_PATH_OPTION=false
+declare RELATIVE_TO_SCRIPT=""
+
+while [ "$#" -gt 0 ]
+do
+	case "$1" in
+	-h|--help)
+cat <<EOF
+Prints absolute and relative paths from a path relative to this script location
+Makes easier to write other scripts that use locations relative to this script path
+[-p] Relative path to fix a base path and calculate relative paths. Required.
+[-r] Prints the relative path from the current path to the base fixed with -p, fails if outside the base dir
+[-n] Doesn't print a new line
+EOF
+		exit 0
+		;;
+	-n)
+		NONEWLINE="-n"
+		;;
+	-p|--path)
+		RELATIVE_TO_SCRIPT=$2
+		shift
+		;;
+	-r)
+		RELATIVE_PATH_OPTION=true
+		;;
+	*)
+		 >&2 echo "Invalid option '$1'. Use --help to see the valid options"
+		exit 1
+		;;
+	esac
+	shift
+done
+
+if [ -z "$RELATIVE_TO_SCRIPT" ]; then
+	>&2 echo "You need to provide a path for --path , use --help to see the available options" >&2
+	exit 1
+fi
+
+#alternatives:
+#SCRIPT_DIR=${BASH_SOURCE%/*}
+#
+#pushd `dirname $0` > /dev/null
+#SCRIPTPATH=`pwd -P`
+#popd > /dev/null
+#
+
+READLINK_OUTPUT=$(readlink -ve "$0")
+SCRIPT_DIR=$(dirname $READLINK_OUTPUT)
+BASE_PATH=$(readlink -ve "$SCRIPT_DIR/$RELATIVE_TO_SCRIPT")
+
+if $RELATIVE_PATH_OPTION; then
+	readonly FULL_PATH=$(pwd -P)
+	if [[ ! $FULL_PATH == $BASE_PATH* ]]; then
+		>&2 echo "Error: Base path: \"$BASE_PATH\" is not a parent of current dir: \"$FULL_PATH\""
+		exit 1;
+	fi
+	echo $NONEWLINE "$FULL_PATH" | sed 's|'$BASE_PATH'/\?||'
+else
+	echo $NONEWLINE $BASE_PATH
+fi

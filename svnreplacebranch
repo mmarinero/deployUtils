@@ -1,0 +1,113 @@
+#!/bin/bash
+
+set -e
+set -u
+set -o pipefail
+
+function show_help {
+readonly SCRIPT_NAME=$(basename "$0")
+cat <<EOF
+Usage:  [options]
+Copies a --relpath directory from --origin branch to --destination branch in the --svn-url repository.
+Before the copy is executed it shows a summarized diff of both branches and prompts to show a full diff.
+It also prints all the commands executed and asks for confirmation before the copy is executed.
+
+-s --svn-url 			svn repository url, required
+-o --origin				origin branch/directory, required
+-d --destination		destination branch/directory, required
+-p --path				Relative path to copy a subdirectory of the branch, default: . (Full branch)
+-y --skip-confirm 		option executes svn delete and copy without diff visualization and confirmation
+-q --quiet				print only essential information and errors
+-h --help				shows help.
+
+file: To release only a file or subfolder of the current dir
+EOF
+}
+
+#options
+declare CONFIRM_COPY=true
+declare REL_PATH='.'
+declare QUIET_OPTION=''
+declare NOQUIET=true
+
+#Required options
+declare SVN_URL=''
+declare ORIGIN=''
+declare DEST=''
+
+while [ "$#" -gt 0 ]
+do
+	case "$1" in
+	-h|--help)
+		show_help
+		exit 0
+		;;
+	-o|--origin)
+		ORIGIN=$2
+		shift
+		;;
+	-d|--destination)
+		DEST=$2
+		shift
+		;;
+	-y|--skip-confirm)
+		CONFIRM_COPY=false
+		;;
+	-s|--svn-url)
+		SVN_URL=$2
+		shift
+		;;
+	-q|--quiet)
+		NOQUIET=false
+		QUIET_OPTION='-q'
+		;;
+	-r|--relpath)
+		REL_PATH=$2
+		shift
+		;;
+	*)
+		>&2 echo "Invalid option '$1'. Use --help to see the available options"
+		exit 1
+		;;
+	esac
+	shift
+done
+if [ -z "$SVN_URL" ]; then
+	>&2 echo "The -s option is mandatory, use --help to see the available options"
+	exit 1
+fi
+if [ -z "$ORIGIN" ]; then
+	>&2 echo "The -o option is mandatory, use --help to see the available options"
+	exit 1
+fi
+if [ -z "$DEST" ]; then
+	>&2 echo "The -d option is mandatory, use --help to see the available options"
+	exit 1
+fi
+
+readonly DEST_URL="svn://$SVN_URL/$DEST/$REL_PATH"
+readonly ORIGIN_URL="svn://$SVN_URL/$ORIGIN/$REL_PATH"
+
+if [ $CONFIRM_COPY = true ]; then
+	$NOQUIET && echo 'this commands will be executed: '
+	$NOQUIET && echo 'svn delete -m' "copy $ORIGIN - $DEST: $REL_PATH delete step" "$DEST_URL"
+	$NOQUIET && echo 'svn copy   -m' "copy $ORIGIN - $DEST: $REL_PATH copy step" "$ORIGIN_URL" "$DEST_URL"
+	echo 'modified files:'
+	$NOQUIET && echo
+	$NOQUIET && echo 'svn diff --summarize --new' "$ORIGIN_URL" '--old' "$DEST_URL"
+	svn diff --summarize --new "$ORIGIN_URL" --old "$DEST_URL"
+	read -p "Are you sure? [y] Show full diff [d]" -n 1 -r
+	echo
+	if [[ $REPLY =~ ^[d]$ ]]; then
+		$NOQUIET && echo 'svn diff --new' "$ORIGIN_URL" '--old' "$DEST_URL"
+		svn diff --new "$ORIGIN_URL" --old "$DEST_URL"
+		read -p "Are you sure? [y]" -n 1 -r
+		echo
+	fi
+fi
+
+if [ $CONFIRM_COPY = false ] || [[ $REPLY =~ ^[y]$ ]]; then
+	svn delete $QUIET_OPTION -m "copy $ORIGIN - $DEST: $REL_PATH delete step" "$DEST_URL"
+	svn copy $QUIET_OPTION -m "copy $ORIGIN - $DEST: $REL_PATH copy step" "$ORIGIN_URL" "$DEST_URL"
+	$NOQUIET && echo "Copied $REL_PATH from $ORIGIN to $DEST";
+fi
