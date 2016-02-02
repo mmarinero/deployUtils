@@ -1,20 +1,21 @@
 #!/bin/bash
 
-SSH_CONN=''
-SERVER_PATH=''
+set -e
+set -u
+set -o pipefail
 
 function show_help {
 readonly SCRIPT_NAME=$(basename "$0")
 cat <<EOF
 readonly SCRIPT_NAME=$(basename "$0")
 cat <<EOF
-Usage: $SCRIPT_NAME [-h] -s ssh-server -p server-path
-ssh-login ssh server login string, ie: example@example.com
-server-base-path Path to the framework from login directory sites/html/
+Usage: $SCRIPT_NAME [-h] -s ssh-connection -p server-path
+ssh-connection ssh server login string, example: example@example.com
+server-path Path to set the ssh session from the login directory, example: sites/html/
 EOF
 }
 
-declare SVN_URL=''
+declare SSH_CONNECTION=''
 declare SERVER_PATH=''
 
 while [ "$#" -gt 0 ]
@@ -24,8 +25,8 @@ do
 		show_help
 		exit 0
 		;;
-	-s|--svn-url)
-		SVN_URL=$2
+	-s|--ssh-connection)
+		SSH_CONNECTION=$2
 		shift
 		;;
 	-p|--server-path)

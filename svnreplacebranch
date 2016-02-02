@@ -7,7 +7,7 @@ set -o pipefail
 function show_help {
 readonly SCRIPT_NAME=$(basename "$0")
 cat <<EOF
-Usage:  [options]
+Usage: $SCRIPT_NAME [options]
 Copies a --relpath directory from --origin branch to --destination branch in the --svn-url repository.
 Before the copy is executed it shows a summarized diff of both branches and prompts to show a full diff.
 It also prints all the commands executed and asks for confirmation before the copy is executed.
