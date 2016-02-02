@@ -4,18 +4,20 @@ set -e
 set -u
 set -o pipefail
 
+declare FILENAME='.'
 function show_help {
 readonly SCRIPT_NAME=$(basename "$0")
 cat <<EOF
-Usage: $SCRIPT_NAME [options]
-Updates a remote svn working copy directory showing a diff and asking for confirmation.
-Allows to ssh into the server directory as an alternative.
+Usage: $SCRIPT_NAME [options] [filename]
+Updates a remote svn working copy SERVER_PATHectory showing a diff and asking for confirmation.
+Allows to ssh into the server SERVER_PATHectory as an alternative.
 
 -h --help				shows this help message.
 -y --skip-confirm 		option executes svn up without confirmation
 -s --ssh-connection		ssh server login string, ie: example@example.com
--p --server-path 		path to the regular file or directory to be updated
+-p --server-path 		path to the SERVER_PATHectory where the update will take place
 -q --quiet				print only essential information and errors
+filename				file that will be updated default: "$FILENAME"
 
 EOF
 }
@@ -25,6 +27,10 @@ declare SSH_CONNECTION=''
 declare SERVER_PATH=''
 declare CONFIRM=true
 declare NOQUIET=true
+declare QUIET_OPTION=''
+
+
+declare PARSED_FILENAME=false
 
 while [ "$#" -gt 0 ]
 do
@@ -48,19 +54,25 @@ do
 		NOQUIET=false
 		QUIET_OPTION='-q'
 		;;
-	*)
-		>&2 echo "Invalid option '$1'. Use --help to see the valid options" >&2
+	-*)
+		>&2 echo "Invalid option '$1'. Use --help to see the valid options"
 		exit 1
+		;;
+	*)
+		FILENAME=$1
+		if [ $PARSED_FILENAME ]; then
+			>&2 echo "Too many filename arguments detected"
+			exit 1
+		fi
+		PARSED_FILENAME=true
 		;;
 	esac
 	shift
 done
 
-readonly $DIR=$(dirname $SERVER_PATH)
-readonly $FILE=$(basename $SERVER_PATH)
-readonly $STCOMMAND="cd \"$DIR\"; svn st -u \"$FILE\";"
-readonly $UPCOMMAND="cd \"$DIR\"; svn st -u \"$FILE\";"
-readonly $LOGINCOMMAND="cd \"$DIR\"; `echo $SHELL --login`"
+readonly $STCOMMAND="cd \"$SERVER_PATH\"; svn st -u \"$FILENAME\";"
+readonly $UPCOMMAND="cd \"$SERVER_PATH\"; svn up $QUIET_OPTION \"$FILENAME\";"
+readonly $LOGINCOMMAND="cd \"$SERVER_PATH\"; `echo $SHELL --login`"
 
 $NOQUIET && echo 'ssh '"$SSH_CONNECTION"' -t '"$STCOMMAND"
 $NOQUIET && ssh $SSH_CONNECTION -t "$STCOMMAND"
@@ -78,7 +90,6 @@ while true; do
 	else
 		read -p "What do you want to do? [u] svn up server, [s] log into server, [q] exit " -n 1 -r
 	fi
-
 	echo
 	case "$REPLY" in
 	u)
