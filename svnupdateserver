@@ -8,9 +8,8 @@ declare FILENAME='.'
 function show_help {
 readonly SCRIPT_NAME=$(basename "$0")
 cat <<EOF
-Usage: $SCRIPT_NAME [options] [filename]
+Usage: $SCRIPT_NAME [options]
 Updates a remote svn working copy SERVER_PATHectory showing a diff and asking for confirmation.
-Allows to ssh into the server SERVER_PATHectory as an alternative.
 
 -h --help				shows this help message.
 -y --skip-confirm 		option executes svn up without confirmation
@@ -18,7 +17,6 @@ Allows to ssh into the server SERVER_PATHectory as an alternative.
 -p --server-path 		path to the SERVER_PATHectory where the update will take place
 -q --quiet				print only essential information and errors
 filename				file that will be updated default: "$FILENAME"
-
 EOF
 }
 
@@ -28,9 +26,6 @@ declare SERVER_PATH=''
 declare CONFIRM=true
 declare NOQUIET=true
 declare QUIET_OPTION=''
-
-
-declare PARSED_FILENAME=false
 
 while [ "$#" -gt 0 ]
 do
@@ -54,58 +49,25 @@ do
 		NOQUIET=false
 		QUIET_OPTION='-q'
 		;;
-	-*)
+	*)
 		>&2 echo "Invalid option '$1'. Use --help to see the valid options"
 		exit 1
-		;;
-	*)
-		FILENAME=$1
-		if [ $PARSED_FILENAME ]; then
-			>&2 echo "Too many filename arguments detected"
-			exit 1
-		fi
-		PARSED_FILENAME=true
 		;;
 	esac
 	shift
 done
 
-readonly $STCOMMAND="cd \"$SERVER_PATH\"; svn st -u \"$FILENAME\";"
-readonly $UPCOMMAND="cd \"$SERVER_PATH\"; svn up $QUIET_OPTION \"$FILENAME\";"
-readonly $LOGINCOMMAND="cd \"$SERVER_PATH\"; `echo $SHELL --login`"
+readonly $STCOMMAND="svn st -u \"$SERVER_PATH\";"
+readonly $UPCOMMAND="svn up $QUIET_OPTION \"$SERVER_PATH\";"
 
-$NOQUIET && echo 'ssh '"$SSH_CONNECTION"' -t '"$STCOMMAND"
-$NOQUIET && ssh $SSH_CONNECTION -t "$STCOMMAND"
-
-if [ $CONFIRM = false ]; then
-	$NOQUIET && echo 'ssh '"$SSH_CONNECTION"' -t '"$UPCOMMAND"
-	ssh $SSH_CONNECTION -t "$UPCOMMAND"
-	exit 0
+REPLY=false
+if [ $CONFIRM ]; then
+	$NOQUIET && echo 'ssh '"$SSH_CONNECTION"' -t '"$STCOMMAND"
+	ssh $SSH_CONNECTION -t "$STCOMMAND"
+	read -p "Are you sure? [y]" -n 1 -r
 fi
 
-declare UPDATED=false
-while true; do
-	if [ $UPDATED ]; then
-		read -p "What do you want to do? [s] log into server, [q] exit " -n 1 -r
-	else
-		read -p "What do you want to do? [u] svn up server, [s] log into server, [q] exit " -n 1 -r
-	fi
-	echo
-	case "$REPLY" in
-	u)
-		if [ $UPDATED = false]; then
-			$NOQUIET && echo 'ssh '"$SSH_CONNECTION"' -t '"$UPCOMMAND"
-			ssh $SSH_CONNECTION -t "$UPCOMMAND"
-			$UPDATED=true
-		fi
-		;;
-	s)
-		$NOQUIET && echo 'ssh '"$SSH_CONNECTION"' -t '"$LOGINCOMMAND"
-		ssh $SSH_CONNECTION -t "$LOGINCOMMAND"
-		exit 0
-		;;
-	q)
-		exit 0
-		;;
-	esac
-done
+if [ $CONFIRM = false ] || [[ $REPLY =~ ^[y]$ ]]; then
+	$NOQUIET && echo 'ssh '"$SSH_CONNECTION"' -t '"$UPCOMMAND"
+	ssh $SSH_CONNECTION -t "$UPCOMMAND"
+fi
