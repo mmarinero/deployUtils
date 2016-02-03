@@ -62,7 +62,12 @@ if $RELATIVE_PATH_OPTION; then
 		>&2 echo "Error: Base path: \"$BASE_PATH\" is not a parent of current dir: \"$FULL_PATH\""
 		exit 1;
 	fi
-	echo $NONEWLINE "$FULL_PATH" | sed 's|'$BASE_PATH'/\?||'
+	readonly OUTPUT=$(echo "$FULL_PATH" | sed 's|'$BASE_PATH'/\?||')
+	if [ -z "$OUTPUT" ]; then
+		echo $NONEWLINE "."
+	else
+		echo $NONEWLINE $OUTPUT
+	fi
 else
 	echo $NONEWLINE $BASE_PATH
 fi
