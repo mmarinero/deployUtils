@@ -15,7 +15,8 @@ It also prints all the commands executed and asks for confirmation before the co
 -s --svn-url 			svn repository url, required
 -o --origin				origin branch/directory, required
 -d --destination		destination branch/directory, required
--p --path				Relative path to copy a subdirectory of the branch, default: . (Full branch)
+-p --path				Relative path inside the branc to replace just a directory/file
+						of the branch, default: . (Full branch)
 -y --skip-confirm 		option executes svn delete and copy without diff visualization and confirmation
 -q --quiet				print only essential information and errors
 -h --help				shows help.
@@ -61,7 +62,7 @@ do
 		NOQUIET=false
 		QUIET_OPTION='-q'
 		;;
-	-r|--relpath)
+	-p|--path)
 		REL_PATH=$2
 		shift
 		;;
