@@ -4,7 +4,6 @@ set -e
 set -u
 set -o pipefail
 
-declare FILENAME='.'
 function show_help {
 readonly SCRIPT_NAME=$(basename "$0")
 cat <<EOF
@@ -16,7 +15,6 @@ Updates a remote svn working copy SERVER_PATHectory showing a diff and asking fo
 -s --ssh-connection		ssh server login string, ie: example@example.com
 -p --server-path 		path to the SERVER_PATHectory where the update will take place
 -q --quiet				print only essential information and errors
-filename				file that will be updated default: "$FILENAME"
 EOF
 }
 
@@ -57,17 +55,23 @@ do
 	shift
 done
 
-readonly $STCOMMAND="svn st -u \"$SERVER_PATH\";"
-readonly $UPCOMMAND="svn up $QUIET_OPTION \"$SERVER_PATH\";"
+if [ -z "$SSH_CONNECTION" ]; then
+	>&2 echo "The -s option is mandatory, use --help to see the available options"
+	exit 1
+fi
+
+readonly STCOMMAND='svn st -u \"'"$SERVER_PATH"'\"'
+readonly UPCOMMAND='svn up '"$QUIET_OPTION"' \"'"$SERVER_PATH"'\"'
 
 REPLY=false
-if [ $CONFIRM ]; then
-	$NOQUIET && echo 'ssh '"$SSH_CONNECTION"' -t '"$STCOMMAND"
-	ssh $SSH_CONNECTION -t "$STCOMMAND"
+if [ $CONFIRM = true ]; then
+	$NOQUIET && echo 'ssh "'"$SSH_CONNECTION"'" -t "'"$STCOMMAND"'"'
+	ssh "$SSH_CONNECTION" -t "$STCOMMAND"
 	read -p "Are you sure? [y]" -n 1 -r
+	echo
 fi
 
 if [ $CONFIRM = false ] || [[ $REPLY =~ ^[y]$ ]]; then
-	$NOQUIET && echo 'ssh '"$SSH_CONNECTION"' -t '"$UPCOMMAND"
-	ssh $SSH_CONNECTION -t "$UPCOMMAND"
+	$NOQUIET && echo 'ssh "'"$SSH_CONNECTION"'" -t "'"$UPCOMMAND"'"'
+	$NOQUIET && ssh "$SSH_CONNECTION" -t "$UPCOMMAND"
 fi
