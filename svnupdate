@@ -60,6 +60,9 @@ if [ -z "$SSH_CONNECTION" ]; then
 	exit 1
 fi
 
+readonly STCOMMAND="svn st -u \"$SERVER_PATH\""
+readonly UPCOMMAND="svn up $QUIET_OPTION \"$SERVER_PATH\""
+
 REPLY=false
 if [ $CONFIRM = true ]; then
 	$NOQUIET && echo 'ssh "'"$SSH_CONNECTION"'" -t "'"$STCOMMAND"'"'
@@ -72,3 +75,4 @@ if [ $CONFIRM = false ] || [[ $REPLY =~ ^[y]$ ]]; then
 	$NOQUIET && echo 'ssh "'"$SSH_CONNECTION"'" -t "'"$UPCOMMAND"'"'
 	$NOQUIET && ssh "$SSH_CONNECTION" -t $UPCOMMAND
 fi
+
