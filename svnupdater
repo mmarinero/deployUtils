@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set -e
+set -u
+set -o pipefail
+
+function show_help {
+readonly SCRIPT_NAME=$(basename "$0")
+cat <<EOF
+Usage: $SCRIPT_NAME [options] [servers...]
+Updates a remote svn working copy SERVER_PATHectory showing a diff and asking for confirmation.
+
+-h --help			shows this help message.
+-y --skip-confirm 	option executes svn up without confirmation
+-q --quiet			print only essential information and errors
+servers				one or more pairs of server and paths to execute svn up on. example:
+					$SCRIPT_NAME 'example@example.com' '/var/www' 'example@example2.com' 'svn/www'
+EOF
+}
+
+#default options
+declare -a SERVERS=()
+
+while [ "$#" -gt 0 ]
+do
+	case "$1" in
+	-h|--help)
+		show_help
+		exit 0
+		;;
+	-y|--skip-confirm)
+		OPTS="$OPTS $1"
+		;;
+	-q|--quiet)
+		OPTS="$OPTS $1"
+		;;
+	-*)
+		>&2 echo "Invalid option '$1'. Use --help to see the valid options"
+		exit 1
+		;;
+	*)
+		$SERVERS+=( "$1;$2" )
+		shift
+		;;
+	esac
+	shift
+done
+
+if [ "${#SERVERS[@]}" -eq 0 ]; then
+	echo "No servers will be updated"
+	exit 0
+fi
+
+readonly SVNUPDATE=$(dirname $0)/svnupdate
+for SERVER in "${SERVERS[@]}"; do
+	SERVER_ARR=${SERVER//;/ }
+	$SVNUPDATE $OPTS -s "${SERVER_ARR[0]}" -p "${SERVER_ARR[1]}"
+done

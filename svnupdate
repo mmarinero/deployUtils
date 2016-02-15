@@ -7,13 +7,13 @@ set -o pipefail
 function show_help {
 readonly SCRIPT_NAME=$(basename "$0")
 cat <<EOF
-Usage: $SCRIPT_NAME [options]
+Usage: $SCRIPT_NAME -s server [options]
 Updates a remote svn working copy SERVER_PATHectory showing a diff and asking for confirmation.
 
 -h --help				shows this help message.
 -y --skip-confirm 		option executes svn up without confirmation
 -s --ssh-connection		ssh server login string, ie: example@example.com
--p --server-path 		path to the SERVER_PATHectory where the update will take place
+-p --server-path 		path to the SERVER_PATH directory where the update will take place
 -q --quiet				print only essential information and errors
 EOF
 }
@@ -60,18 +60,15 @@ if [ -z "$SSH_CONNECTION" ]; then
 	exit 1
 fi
 
-readonly STCOMMAND='svn st -u \"'"$SERVER_PATH"'\"'
-readonly UPCOMMAND='svn up '"$QUIET_OPTION"' \"'"$SERVER_PATH"'\"'
-
 REPLY=false
 if [ $CONFIRM = true ]; then
 	$NOQUIET && echo 'ssh "'"$SSH_CONNECTION"'" -t "'"$STCOMMAND"'"'
-	ssh "$SSH_CONNECTION" -t "$STCOMMAND"
+	ssh "$SSH_CONNECTION" -t $STCOMMAND
 	read -p "Are you sure? [y]" -n 1 -r
 	echo
 fi
 
 if [ $CONFIRM = false ] || [[ $REPLY =~ ^[y]$ ]]; then
 	$NOQUIET && echo 'ssh "'"$SSH_CONNECTION"'" -t "'"$UPCOMMAND"'"'
-	$NOQUIET && ssh "$SSH_CONNECTION" -t "$UPCOMMAND"
+	$NOQUIET && ssh "$SSH_CONNECTION" -t $UPCOMMAND
 fi

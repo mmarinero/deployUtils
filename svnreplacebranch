@@ -93,8 +93,8 @@ if [ $CONFIRM_COPY = true ]; then
 	$NOQUIET && echo 'this commands will be executed: '
 	$NOQUIET && echo 'svn delete -m' "copy $ORIGIN - $DEST: $REL_PATH delete step" "$DEST_URL"
 	$NOQUIET && echo 'svn copy   -m' "copy $ORIGIN - $DEST: $REL_PATH copy step" "$ORIGIN_URL" "$DEST_URL"
-	echo 'modified files:'
 	$NOQUIET && echo
+	echo 'modified files:'
 	$NOQUIET && echo 'svn diff --summarize --new' "$ORIGIN_URL" '--old' "$DEST_URL"
 	svn diff --summarize --new "$ORIGIN_URL" --old "$DEST_URL"
 	read -p "Are you sure? [y] Show full diff [d]" -n 1 -r
