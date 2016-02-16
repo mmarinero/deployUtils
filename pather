@@ -1,8 +1,6 @@
 #!/bin/bash
 
-set -e
-set -u
-set -o pipefail
+set -euo pipefail
 
 declare NONEWLINE=""
 declare RELATIVE_PATH_OPTION=false
@@ -15,7 +13,7 @@ do
 cat <<EOF
 Prints absolute and relative paths from a path relative to this script location
 Makes easier to write other scripts that use locations relative to this script path
-[-p] Relative path to fix a base path and calculate relative paths. Required.
+ -p  Relative path from this file to fix a base path and calculate relative paths. Required.
 [-r] Prints the relative path from the current path to the base fixed with -p, fails if outside the base dir
 [-n] Doesn't print a new line
 EOF

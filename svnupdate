@@ -1,13 +1,11 @@
 #!/bin/bash
 
-set -e
-set -u
-set -o pipefail
+set -euo pipefail
 
 function show_help {
-readonly SCRIPT_NAME=$(basename "$0")
+local SCRIPT_NAME=$(basename "$0")
 cat <<EOF
-Usage: $SCRIPT_NAME -s server [options]
+Usage: $SCRIPT_NAME [options] -s server
 Updates a remote svn working copy SERVER_PATHectory showing a diff and asking for confirmation.
 
 -h --help				shows this help message.
@@ -74,5 +72,5 @@ fi
 if [ $CONFIRM = false ] || [[ $REPLY =~ ^[y]$ ]]; then
 	$NOQUIET && echo 'ssh "'"$SSH_CONNECTION"'" -t "'"$UPCOMMAND"'"'
 	$NOQUIET && ssh "$SSH_CONNECTION" -t $UPCOMMAND
+	$NOQUIET && echo 'Update completed'
 fi
-

@@ -1,11 +1,9 @@
 #!/bin/bash
 
-set -e
-set -u
-set -o pipefail
+set -euo pipefail
 
 function show_help {
-readonly SCRIPT_NAME=$(basename "$0")
+local SCRIPT_NAME=$(basename "$0")
 cat <<EOF
 readonly SCRIPT_NAME=$(basename "$0")
 cat <<EOF

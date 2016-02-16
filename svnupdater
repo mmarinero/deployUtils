@@ -1,11 +1,9 @@
 #!/bin/bash
 
-set -e
-set -u
-set -o pipefail
+set -eo pipefail
 
 function show_help {
-readonly SCRIPT_NAME=$(basename "$0")
+local SCRIPT_NAME=$(basename "$0")
 cat <<EOF
 Usage: $SCRIPT_NAME [options] [servers...]
 Updates a remote svn working copy SERVER_PATHectory showing a diff and asking for confirmation.
@@ -20,6 +18,7 @@ EOF
 
 #default options
 declare -a SERVERS=()
+declare OPTS=''
 
 while [ "$#" -gt 0 ]
 do
@@ -39,7 +38,10 @@ do
 		exit 1
 		;;
 	*)
-		$SERVERS+=( "$1;$2" )
+		if [ -z "$2" ]; then
+			>&2 echo "The servers list can't be parsed. Use --help to see the valid options"
+		fi
+		SERVERS+=("$1 $2")
 		shift
 		;;
 	esac
@@ -53,6 +55,6 @@ fi
 
 readonly SVNUPDATE=$(dirname $0)/svnupdate
 for SERVER in "${SERVERS[@]}"; do
-	SERVER_ARR=${SERVER//;/ }
+	SERVER_ARR=($SERVER)
 	$SVNUPDATE $OPTS -s "${SERVER_ARR[0]}" -p "${SERVER_ARR[1]}"
 done
