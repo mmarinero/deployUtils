@@ -42,7 +42,7 @@ if [ -z "$RELATIVE_TO_SCRIPT" ]; then
 	exit 1
 fi
 
-#alternatives:
+#alternatives to locate script dir:
 #SCRIPT_DIR=${BASH_SOURCE%/*}
 #
 #pushd `dirname $0` > /dev/null
@@ -60,6 +60,7 @@ if $RELATIVE_PATH_OPTION; then
 		>&2 echo "Error: Base path: \"$BASE_PATH\" is not a parent of current dir: \"$FULL_PATH\""
 		exit 1;
 	fi
+	#Remove BASE_PATH from FULL_PATH so only the end remains and handle empty string
 	readonly OUTPUT=$(echo "$FULL_PATH" | sed 's|'$BASE_PATH'/\?||')
 	if [ -z "$OUTPUT" ]; then
 		echo $NONEWLINE "."
